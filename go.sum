@@ -1,0 +1,17 @@
+github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/kaibox-git/lmail v0.1.0 h1:B/GGkP92e1sf0+n7H0KNQ4Gbp5Ru30iTkt0+w3444M8=
+github.com/kaibox-git/lmail v0.1.0/go.mod h1:feo7/Lj43EVLRUXH9UCUtVCGOpdz9eY1lRUoEUwhpgs=
+github.com/kaibox-git/sqlparams v0.1.0 h1:1VxCo26jsRR3mtbeuiqrK1boYGZ1+cwO4aKUjmqtnzk=
+github.com/kaibox-git/sqlparams v0.1.0/go.mod h1:7xkjPcaar5UjHekMF4Kqm0Zxud7D+PatNLyay6C6dv4=
+github.com/kaibox-git/sqlparams v1.0.1 h1:lghA8vHzYVUXfI5dLQvRp5ze4E41tX2e60teV9MdqO4=
+github.com/kaibox-git/sqlparams v1.0.1/go.mod h1:7xkjPcaar5UjHekMF4Kqm0Zxud7D+PatNLyay6C6dv4=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
+github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/xhit/go-simple-mail/v2 v2.10.0/go.mod h1:kA1XbQfCI4JxQ9ccSN6VFyIEkkugOm7YiPkA5hKiQn4=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie2QXMNeKRTHCNY2nXvo=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
