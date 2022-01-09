@@ -1,4 +1,4 @@
-module github.com/kaibox-git/report.git
+module github.com/kaibox-git/report
 
 go 1.17
 

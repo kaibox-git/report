@@ -4,8 +4,6 @@ github.com/kaibox-git/lmail v0.1.0 h1:B/GGkP92e1sf0+n7H0KNQ4Gbp5Ru30iTkt0+w3444M
 github.com/kaibox-git/lmail v0.1.0/go.mod h1:feo7/Lj43EVLRUXH9UCUtVCGOpdz9eY1lRUoEUwhpgs=
 github.com/kaibox-git/sqlparams v0.1.0 h1:1VxCo26jsRR3mtbeuiqrK1boYGZ1+cwO4aKUjmqtnzk=
 github.com/kaibox-git/sqlparams v0.1.0/go.mod h1:7xkjPcaar5UjHekMF4Kqm0Zxud7D+PatNLyay6C6dv4=
-github.com/kaibox-git/sqlparams v1.0.1 h1:lghA8vHzYVUXfI5dLQvRp5ze4E41tX2e60teV9MdqO4=
-github.com/kaibox-git/sqlparams v1.0.1/go.mod h1:7xkjPcaar5UjHekMF4Kqm0Zxud7D+PatNLyay6C6dv4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
