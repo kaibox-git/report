@@ -3,6 +3,7 @@ package report
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/mail"
 	"runtime"
 	"strconv"
@@ -26,8 +27,9 @@ type Request struct {
 }
 
 type Report struct {
-	appName string
-	email   emailConfig
+	appName  string
+	email    emailConfig
+	errorLog *log.Logger
 }
 
 type emailConfig struct {
@@ -36,7 +38,7 @@ type emailConfig struct {
 	to     []mail.Address
 }
 
-func New(appName string, mailSender lmail.EmailProvider, from mail.Address, to []mail.Address) *Report {
+func New(appName string, mailSender lmail.EmailProvider, from mail.Address, to []mail.Address, errorLogger *log.Logger) *Report {
 	return &Report{
 		appName: appName,
 		email: emailConfig{
@@ -44,6 +46,7 @@ func New(appName string, mailSender lmail.EmailProvider, from mail.Address, to [
 			from:   from,
 			to:     to,
 		},
+		errorLog: errorLogger,
 	}
 }
 
@@ -63,14 +66,20 @@ func (report *Report) SqlError(r *Request, err error, query string, params ...in
 
 	m := report.createMessage(r, FileWithLineNum, err, sqlparams.Inline(query, params...))
 	go func() {
-		_ = report.email.sender.Send(&lmail.Data{
+		if err := report.email.sender.Send(&lmail.Data{
 			From:        report.email.from,
 			To:          report.email.to,
 			Subject:     `!!! SQL проблема !!!`,
 			Body:        m,
 			WithLimiter: true,
-		})
+		}); err != nil {
+			report.logError(m)
+		}
 	}()
+	if report.errorLog != nil {
+		go report.logError(m)
+	}
+
 }
 
 func (report *Report) Error(r *Request, err error) {
@@ -79,14 +88,19 @@ func (report *Report) Error(r *Request, err error) {
 
 	m := report.createMessage(r, FileWithLineNum, err, "")
 	go func() {
-		_ = report.email.sender.Send(&lmail.Data{
+		if err := report.email.sender.Send(&lmail.Data{
 			From:        report.email.from,
 			To:          report.email.to,
 			Subject:     `!!! Ошибка !!!`,
 			Body:        m,
 			WithLimiter: true,
-		})
+		}); err != nil {
+			report.logError(m)
+		}
 	}()
+	if report.errorLog != nil {
+		go report.logError(m)
+	}
 }
 
 func (report *Report) createMessage(r *Request, FileWithLineNum string, err error, sql string) string {
@@ -132,6 +146,12 @@ func (report *Report) FilesWithLineNum() (out []string) {
 		}
 	}
 	return out
+}
+
+func (report *Report) logError(m string) {
+	report.errorLog.Printf("%s", m)
+	report.errorLog.Println(strings.Repeat("—", 70))
+	report.errorLog.Println("")
 }
 
 func requestData(r *Request) string {
