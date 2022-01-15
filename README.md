@@ -26,8 +26,6 @@ report.Sql(query, params...)
 ## Examples
 
 ```go
-...
-
 // init email client: https://github.com/kaibox-git/lmail
 host := `localhost`
 port := 25
