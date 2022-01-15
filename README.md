@@ -13,6 +13,8 @@ go get github.com/kaibox-git/report
 object - any object you want to include to report with this error
 
 ```go
+// Send a message
+report.Message(subject, body)
 // Report error:
 report.Error(object, err)
 // Report sql error:
@@ -60,6 +62,8 @@ if err != nil {
 }
 
 // Now we are ready to use the report
+
+report.Message(appName + ` started`, ``)
 
 ...
 
