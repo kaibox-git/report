@@ -60,36 +60,36 @@ if err != nil {
 ...
 
 func (repo *SomeRepo) SelectSomeTable(ctx context.Context, SubjectId int) (uint, error) {
-// Timings (QueryDeadline & QueryTimeWarning):
-queryCtx, cancel := context.WithTimeout(ctx, repo.QueryDeadline) // Cancel query if QueryDeadline is exceeded.
-defer cancel()
-queryStart := time.Now()
+    // Timings (QueryDeadline & QueryTimeWarning):
+    queryCtx, cancel := context.WithTimeout(ctx, repo.QueryDeadline) // Cancel query if QueryDeadline is exceeded.
+    defer cancel()
+    queryStart := time.Now()
 
-var id uint
-// for postgres:
-query := repo.db.Rebind(`SELECT id FROM some_table WHERE subject_id=? AND actual`)
-params := []interface{}{SubjectId}
-if err := repo.db.QueryRowContext(queryCtx, query, params...).Scan(&id); err != nil {
-    switch {
-    case errors.Is(queryCtx.Err(), context.Canceled) || errors.Is(queryCtx.Err(), context.DeadlineExceeded):
-        return 0, uerror.Context
-    case err == sql.ErrNoRows:
-        return 0, uerror.NotFound
-    default:
-        // If there is some context data (object) to this query that you want to see in report you can pass it as first parameter.
-        // Now this is nil.
-        repo.report.SqlError(nil, err, query, params...) 
-        return 0, report.ErrReported
+    var id uint
+    // for postgres:
+    query := repo.db.Rebind(`SELECT id FROM some_table WHERE subject_id=? AND actual`)
+    params := []interface{}{SubjectId}
+    if err := repo.db.QueryRowContext(queryCtx, query, params...).Scan(&id); err != nil {
+        switch {
+        case errors.Is(queryCtx.Err(), context.Canceled) || errors.Is(queryCtx.Err(), context.DeadlineExceeded):
+            return 0, uerror.Context
+        case err == sql.ErrNoRows:
+            return 0, uerror.NotFound
+        default:
+            // If there is some context data (object) to this query that you want to see in report you can pass it as first parameter.
+            // Now this is nil.
+            repo.report.SqlError(nil, err, query, params...) 
+            return 0, report.ErrReported
+        }
     }
-}
 
-// Warning if QueryTimeWarning is exceeded.
-queryTime := time.Since(queryStart)
-if queryTime > repo.QueryTimeWarning {
-    repo.report.SqlError(nil, fmt.Errorf("query time: %v", queryTime), query, params...)
-}
+    // Warning if QueryTimeWarning is exceeded.
+    queryTime := time.Since(queryStart)
+    if queryTime > repo.QueryTimeWarning {
+        repo.report.SqlError(nil, fmt.Errorf("query time: %v", queryTime), query, params...)
+    }
 
-return id, nil
+    return id, nil
 }
 
 ```
