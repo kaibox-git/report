@@ -28,8 +28,8 @@ var (
 type ReportProvider interface {
 	Message(m string)
 	Sql(query string, params ...interface{})
-	SqlError(caller interface{}, err error, query string, params ...interface{})
-	Error(caller interface{}, err error)
+	SqlError(r interface{}, err error, query string, params ...interface{})
+	Error(r interface{}, err error)
 	FileWithLineNum() string
 	FilesWithLineNum() (out []string)
 }
