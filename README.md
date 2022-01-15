@@ -10,7 +10,7 @@ go get github.com/kaibox-git/report
 
 ## Usage
 
-object - any object you want to include to report with this error
+object - any object you want to include to report with an error
 
 ```go
 // Send a message
