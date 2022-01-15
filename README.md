@@ -28,7 +28,7 @@ report.Sql(query, params...)
 ```go
 ...
 
-// init [email client](https://github.com/kaibox-git/lmail)
+// init email client: https://github.com/kaibox-git/lmail
 host := `localhost`
 port := 25
 connTimeout := time.Second // for local smtp server
