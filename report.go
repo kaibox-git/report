@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/mail"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kaibox-git/lmail"
@@ -17,13 +19,19 @@ import (
 var (
 	QueryTimeWarning = 200 * time.Millisecond // Высылает предупреждение, если время выполнения запроса превышает установленное
 	QueryDeadline    = 5 * time.Second        // Прерывает запрос, освобождая соединение, если время выполнения запроса превышает установленное
+	ErrReported      = errors.New(`error has been reported`)
 	ErrNotFound      = errors.New("not found")
-	ErrContext       = errors.New(`context canceled or deadline exceeded`)
+	ErrContext       = errors.New(`context canceled`)
 	ErrInternal      = errors.New("internal server error")
 )
 
-type Request struct {
-	Data string
+type ReportProvider interface {
+	Message(m string)
+	Sql(query string, params ...interface{})
+	SqlError(caller interface{}, err error, query string, params ...interface{})
+	Error(caller interface{}, err error)
+	FileWithLineNum() string
+	FilesWithLineNum() (out []string)
 }
 
 type Report struct {
@@ -50,14 +58,45 @@ func New(appName string, mailSender lmail.EmailProvider, from mail.Address, to [
 	}
 }
 
+func (report *Report) Message(subject, body string) {
+	if body == `` {
+		body = subject
+	}
+	m := fmt.Sprintf("%s\n%s\n\n", time.Now().Format("02.01.2006 15:04:05"), body)
+	print(m)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := report.email.sender.Send(&lmail.Data{
+			From:    report.email.from,
+			To:      report.email.to,
+			Subject: subject,
+			Body:    m,
+		}); err != nil {
+			report.logError(m)
+		}
+	}()
+	if report.errorLog != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			report.logError(m)
+		}()
+	}
+	wg.Wait()
+}
+
+// Для теста. Выводит в stdout sql запрос с встроенными параметрами
 func (report *Report) Sql(query string, params ...interface{}) {
-	var FileWithLineNum = FileWithLineNum()
+	var FileWithLineNum = report.FileWithLineNum()
 	fmt.Printf("\n%s\n%s\n", FileWithLineNum, sqlparams.Inline(query, params...))
 }
 
 // Сообщение об ошибке выполнения sql запроса
-func (report *Report) SqlError(r *Request, err error, query string, params ...interface{}) {
-	var FileWithLineNum = FileWithLineNum()
+func (report *Report) SqlError(r interface{}, err error, query string, params ...interface{}) {
+	var FileWithLineNum = report.FileWithLineNum()
 	if err == nil {
 		fmt.Printf("\n%s\n%s\n", FileWithLineNum, sqlparams.Inline(query, params...))
 		return
@@ -73,7 +112,9 @@ func (report *Report) SqlError(r *Request, err error, query string, params ...in
 			Body:        m,
 			WithLimiter: true,
 		}); err != nil {
-			report.logError(m)
+			if report.errorLog != nil {
+				report.logError(m)
+			}
 		}
 	}()
 	if report.errorLog != nil {
@@ -82,8 +123,8 @@ func (report *Report) SqlError(r *Request, err error, query string, params ...in
 
 }
 
-func (report *Report) Error(r *Request, err error) {
-	var FileWithLineNum = FileWithLineNum()
+func (report *Report) Error(r interface{}, err error) {
+	var FileWithLineNum = report.FileWithLineNum()
 	fmt.Printf("\n%s\n%s\n", FileWithLineNum, err.Error())
 
 	m := report.createMessage(r, FileWithLineNum, err, "")
@@ -95,7 +136,9 @@ func (report *Report) Error(r *Request, err error) {
 			Body:        m,
 			WithLimiter: true,
 		}); err != nil {
-			report.logError(m)
+			if report.errorLog != nil {
+				report.logError(m)
+			}
 		}
 	}()
 	if report.errorLog != nil {
@@ -103,7 +146,7 @@ func (report *Report) Error(r *Request, err error) {
 	}
 }
 
-func (report *Report) createMessage(r *Request, FileWithLineNum string, err error, sql string) string {
+func (report *Report) createMessage(r interface{}, FileWithLineNum string, err error, sql string) string {
 	var sb strings.Builder
 	var errStr string
 	if err != nil {
@@ -117,18 +160,18 @@ func (report *Report) createMessage(r *Request, FileWithLineNum string, err erro
 			FileWithLineNum,
 			errStr,
 			sql,
-			requestData(r))
+			getObjectData(r))
 	} else {
 		fmt.Fprintf(&sb, "%s\n%s\n%s\n%s",
 			time.Now().Format("02.01.2006 15:04:05"),
 			FileWithLineNum,
 			errStr,
-			requestData(r))
+			getObjectData(r))
 	}
 	return sb.String()
 }
 
-func FileWithLineNum() string {
+func (report *Report) FileWithLineNum() string {
 	for i := 2; i < 15; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if ok {
@@ -154,6 +197,62 @@ func (report *Report) logError(m string) {
 	report.errorLog.Println("")
 }
 
-func requestData(r *Request) string {
-	return r.Data
+func getObjectData(object interface{}, tabs ...string) string {
+	if object == nil {
+		return ``
+	}
+	t := reflect.TypeOf(object)
+	val := reflect.ValueOf(object)
+	if t.Kind() == reflect.Ptr {
+		val = val.Elem()
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return "\n"
+	}
+	var (
+		key          string
+		v            interface{}
+		sb           strings.Builder
+		timeType     = reflect.TypeOf(time.Time{})
+		tab          = strings.Join(tabs, ``)
+		handleStruct = func(i int) {
+			switch {
+			case t.Field(i).Type == timeType: // time.Time
+				fmt.Fprintf(&sb, "%s%s: %v\n", tab, t.Field(i).Name, val.Field(i))
+			case t.Field(i).Type.Kind() == reflect.Ptr && t.Field(i).Type.Elem() == timeType: // *time.Time
+				fmt.Fprintf(&sb, "%s%s: %v\n", tab, t.Field(i).Name, val.Field(i).Elem())
+			default: // struct or *struct
+				fmt.Fprintf(&sb, "%s%s:\n", tab, t.Field(i).Name)
+				sb.WriteString(getObjectData(val.Field(i).Interface(), tab, "\t"))
+			}
+		}
+	)
+	for i := 0; i < val.NumField(); i++ {
+		if !val.Field(i).CanInterface() { // Если поле неэкспортируемое, - проигнорировать
+			continue
+		}
+		switch t.Field(i).Type.Kind() {
+		case reflect.Ptr:
+			if val.Field(i).IsNil() {
+				v = nil
+			} else if t.Field(i).Type.Elem().Kind() == reflect.Struct {
+				handleStruct(i)
+				continue
+			} else {
+				v = val.Field(i).Elem().Interface()
+			}
+			key = t.Field(i).Name
+		case reflect.Struct:
+			handleStruct(i)
+			continue
+		default:
+			key = t.Field(i).Name
+			v = val.Field(i).Interface()
+		}
+		fmt.Fprintf(&sb, "%s%s = %v\n", tab, key, v)
+	}
+	sb.WriteByte('\n')
+	return sb.String()
+
 }
