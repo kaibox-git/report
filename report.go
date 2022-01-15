@@ -75,7 +75,9 @@ func (report *Report) Message(subject, body string) {
 			Subject: subject,
 			Body:    m,
 		}); err != nil {
-			report.logError(m)
+			if report.errorLog != nil {
+				report.logError(m)
+			}
 		}
 	}()
 	if report.errorLog != nil {
