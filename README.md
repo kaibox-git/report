@@ -10,15 +10,15 @@ go get github.com/kaibox-git/report
 
 ## Usage
 
-object - any object you want to include to report with an error
+`object` - any object you want to include to a report with an error. As a rule, it contains some values regarding the current data processing.
 
 ```go
-// Send a message
-report.Message(subject, body)
 // Report error:
 report.Error(object, err)
 // Report sql error:
 report.SqlError(object, err, query, params...)
+// Send a message
+report.Message(subject, body)
 // Print sql query with inlined parameters to stdout (console) while testing
 report.Sql(query, params...)
 ```
@@ -44,7 +44,7 @@ if err != nil {
 }
 
 // init simple logger for demonstration purposes
-errorLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+errorLogger := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
 
 // init report client
 appName := `mybot`
@@ -68,13 +68,13 @@ report.Message(appName + ` started`, ``)
 url := `https://domain.com`
 request, err := http.NewRequest("GET", url, nil)
 if err != nil {
-    report.Error(url, err) // you can pass 'url' as first parameter to include this value to report indicating that the error belongs to this value
+    report.Error(url, err) // you can pass 'url' as first parameter to include this value to a report
     return report.ErrInternal
 }
 
 ...
 
-func (repo *SomeRepo) SelectSomeTable(ctx context.Context, SubjectId int) (uint, error) {
+func (repo *SomeRepo) SelectSomeTable(ctx context.Context, object interface{}, SubjectId int) (uint, error) {
     // Timings (QueryDeadline & QueryTimeWarning):
     queryCtx, cancel := context.WithTimeout(ctx, repo.QueryDeadline) // Cancel query if QueryDeadline is exceeded.
     defer cancel()
@@ -86,14 +86,13 @@ func (repo *SomeRepo) SelectSomeTable(ctx context.Context, SubjectId int) (uint,
     params := []interface{}{SubjectId}
     if err := repo.db.QueryRowContext(queryCtx, query, params...).Scan(&id); err != nil {
         switch {
-        case errors.Is(queryCtx.Err(), context.Canceled) || errors.Is(queryCtx.Err(), context.DeadlineExceeded):
+        case errors.Is(err, context.Canceled) || errors.Is(err, os.ErrDeadlineExceeded):
             return 0, uerror.Context
         case err == sql.ErrNoRows:
             return 0, uerror.NotFound
         default:
-            // If there is some context data (object) to this query that you want to see in report you can pass it as first parameter.
-            // Now this is nil.
-            repo.report.SqlError(nil, err, query, params...) 
+            // If there is some context data (object) to this query that you want to see in a report you can pass it as first parameter or pass nil.
+            repo.report.SqlError(object, err, query, params...) 
             return 0, report.ErrReported
         }
     }
@@ -101,7 +100,7 @@ func (repo *SomeRepo) SelectSomeTable(ctx context.Context, SubjectId int) (uint,
     // Warning if QueryTimeWarning is exceeded.
     queryTime := time.Since(queryStart)
     if queryTime > repo.QueryTimeWarning {
-        repo.report.SqlError(nil, fmt.Errorf("query time: %v", queryTime), query, params...)
+        repo.report.SqlError(object, fmt.Errorf("query time: %v", queryTime), query, params...)
     }
 
     return id, nil

@@ -110,7 +110,7 @@ func (report *Report) SqlError(r interface{}, err error, query string, params ..
 		if err := report.email.sender.Send(&lmail.Data{
 			From:        report.email.from,
 			To:          report.email.to,
-			Subject:     `!!! SQL проблема !!!`,
+			Subject:     `!!! ` + report.appName + `: SQL проблема !!!`,
 			Body:        m,
 			WithLimiter: true,
 		}); err != nil {
@@ -134,7 +134,7 @@ func (report *Report) Error(r interface{}, err error) {
 		if err := report.email.sender.Send(&lmail.Data{
 			From:        report.email.from,
 			To:          report.email.to,
-			Subject:     `!!! Ошибка !!!`,
+			Subject:     `!!! ` + report.appName + `: ошибка !!!`,
 			Body:        m,
 			WithLimiter: true,
 		}); err != nil {
