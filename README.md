@@ -86,7 +86,7 @@ func (repo *SomeRepo) SelectSomeTable(ctx context.Context, object interface{}, S
     params := []interface{}{SubjectId}
     if err := repo.db.QueryRowContext(queryCtx, query, params...).Scan(&id); err != nil {
         switch {
-        case errors.Is(queryCtx.Err(), context.Canceled) || errors.Is(queryCtx.Err(), context.DeadlineExceeded):
+        case errors.Is(queryCtx.Err(), context.Canceled), errors.Is(queryCtx.Err(), context.DeadlineExceeded):
             return 0, uerror.Context
         case err == sql.ErrNoRows:
             return 0, uerror.NotFound
