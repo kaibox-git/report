@@ -86,14 +86,14 @@ func (repo *SomeRepo) SelectSomeTable(ctx context.Context, object interface{}, S
     params := []interface{}{SubjectId}
     if err := repo.db.QueryRowContext(queryCtx, query, params...).Scan(&id); err != nil {
         switch {
-        case errors.Is(err, context.Canceled) || errors.Is(err, os.ErrDeadlineExceeded):
+        case errors.Is(queryCtx.Err(), context.Canceled) || errors.Is(queryCtx.Err(), context.DeadlineExceeded):
             return 0, uerror.Context
         case err == sql.ErrNoRows:
             return 0, uerror.NotFound
         default:
             // If there is some context data (object) to this query that you want to see in a report you can pass it as first parameter or pass nil.
             repo.report.SqlError(object, err, query, params...) 
-            return 0, report.ErrReported
+            return 0, report.ErrInternal
         }
     }
 
